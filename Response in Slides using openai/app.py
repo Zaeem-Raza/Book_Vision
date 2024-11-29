@@ -1,5 +1,5 @@
 import openai  # type: ignore
-import secrets
+import my_secrets
 import os
 import subprocess
 # import fitz  # PyMuPDF # type: ignore
@@ -50,7 +50,7 @@ def run_rag_pipeline(pdf_path, query):
 
 
 def load_openai_key():
-    return secrets.OPEN_AI_SECRET_KEY
+    return my_secrets.OPEN_AI_SECRET_KEY
 
 
 def call_openai_chat(prompt, model="gpt-3.5-turbo"):
@@ -100,6 +100,7 @@ def extract_latex_code(raw_response):
 
 
 if __name__ == "__main__":
+
     # Step 1: Get the user's query
     user_prompt = input("Enter your prompt: ")
 
