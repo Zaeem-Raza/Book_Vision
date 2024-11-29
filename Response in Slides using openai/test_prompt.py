@@ -1,10 +1,10 @@
 import openai  # type: ignore
-import secret
+import my_secrets
 
 
 def call_openai_chat(prompt, model="gpt-3.5-turbo"):
     """Calls OpenAI's API to get a response based on the prompt."""
-    openai.api_key = secret.OPEN_AI_SECRET_KEY
+    openai.api_key = my_secrets.OPEN_AI_SECRET_KEY
 
     try:
         response = openai.ChatCompletion.create(
