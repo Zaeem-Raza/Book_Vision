@@ -63,23 +63,46 @@ def save_to_file(filename, content):
     with open(filename, 'w') as f:
         f.write(content)
 
+def clean_latex_code(latex_content):
+    try:
+        openai.api_key = load_openai_key()
+        prompt = (
+            f"The following LaTeX code needs cleaning and fixing. Ensure it compiles without errors."
+            f"Provide only the cleaned LaTeX code:\n\n{latex_content}"
+        )
+        response = call_openai_chat(prompt)
+        return response
+    except Exception as e:
+        return f"An error occurred during LaTeX cleaning: {e}"
+
+def generate_pdf_from_latex(latex_code, output_filename):
+    temp_tex_file = "temp_presentation.tex"
+    save_to_file(temp_tex_file, latex_code)
+    try:
+        subprocess.run(["pdflatex", "-interaction=nonstopmode", temp_tex_file], check=True)
+        os.rename("temp_presentation.pdf", output_filename)
+        print(f"PDF generated and saved as {output_filename}.")
+    except Exception as e:
+        print(f"Error generating PDF: {e}")
+    finally:
+        for ext in ["aux", "log", "out", "tex"]:
+            if os.path.exists(f"temp_presentation.{ext}"):
+                os.remove(f"temp_presentation.{ext}")
+
 if __name__ == "__main__":
 
-    # Step 1: Get the user's query
     user_prompt = input("Enter your prompt: ")
 
-    # Step 2: Retrieve relevant chunks from the textbook
     pdf_path = "Physics 9.pdf"
     answer = run_rag_pipeline(pdf_path, user_prompt)
 
-    # Step 3: Call OpenAI to refine the text
+    #  Call OpenAI to refine the text
     refinement_prompt = (
         f"Read the following text and make the answer better:\n\n"
         f"{answer}"
     )
     refined_answer = call_openai_chat(refinement_prompt)
 
-    # Step 4: Print and save the refined answer
     print("\nGenerated Answer:")
     print(refined_answer)
 
@@ -87,16 +110,22 @@ if __name__ == "__main__":
     save_to_file(output_filename, refined_answer)
 
     print(f"\nRefined answer saved to {output_filename}.")
-    
-    
-    # use the refined answer to create a presentation, call openai to generate slides
-    # Step 5: Call OpenAI to generate slides
+ # beamer presentation
     slide_prompt = (
-        f"Create a beamer presentation slides based on the following text:\n\n"
+        f"Create a beamer Presentation of the following text. Also include visual aids to improve the answer. Divide into different frames:\n\n"
         f"{refined_answer}"
     )
     slide_content = call_openai_chat(slide_prompt)
-    # Step 6: Save the slide content to a file
+
     slide_filename = "presentation.tex"
     save_to_file(slide_filename, slide_content)
     print(f"\nPresentation slides saved to {slide_filename}.")
+    cleaned_slide_content = clean_latex_code(slide_content)
+
+    cleaned_slide_filename = "cleaned_presentation.tex"
+    save_to_file(cleaned_slide_filename, cleaned_slide_content)
+    print(f"\nCleaned slide content saved to {cleaned_slide_filename}.")
+
+    # Step 9: Generate a PDF from the cleaned LaTeX code
+    pdf_filename = "MyResponse.pdf"
+    generate_pdf_from_latex(cleaned_slide_content, pdf_filename)
